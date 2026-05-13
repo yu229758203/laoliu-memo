@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>老六备忘录</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); min-height: 100vh; color: #e0e0e0; padding: 12px; }
+  .container { max-width: 680px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; padding: 16px 0 12px; }
+  .header h1 { font-size: 24px; color: #fff; }
+  .header p { color: #777; font-size: 12px; margin-top: 2px; }
+  .header .emoji { font-size: 40px; }
+
+  /* Stats */
+  .stats { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 8px 14px; text-align: center; border: 1px solid rgba(255,255,255,0.06); min-width: 72px; }
+  .stat .num { font-size: 20px; font-weight: 700; color: #ff6b6b; }
+  .stat .label { font-size: 10px; color: #666; margin-top: 1px; }
+  .stat.warning .num { color: #ffa502; }
+  .stat.danger .num { color: #ff4d4f; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* Sync bar */
+  .sync-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .sync-bar input[type="file"] { display: none; }
+  .sync-btn { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px; color: #999; font-size: 12px; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .sync-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .sync-btn span { display: block; font-size: 18px; margin-bottom: 2px; }
+  .sync-btn.danger { border-color: rgba(255,77,79,0.3); }
+  .sync-btn.danger:hover { background: rgba(255,77,79,0.15); color: #ff4d4f; border-color: #ff4d4f; }
+  .sync-btn.important { border-color: rgba(255,165,2,0.3); }
+  .sync-btn.important:hover { background: rgba(255,165,2,0.15); color: #ffa502; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab { flex: 1; padding: 8px; text-align: center; border-radius: 10px; font-size: 13px; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #777; transition: all 0.2s; }
+  .tab.active { background: rgba(255,107,107,0.2); border-color: #ff6b6b; color: #ff6b6b; }
+
+  /* Input box */
+  .input-box { background: rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .input-box input[type="text"] { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; min-width: 0; }
+  .input-box input[type="text"]:focus { border-color: #ff6b6b; }
+  .input-box input[type="datetime-local"] { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; flex: 1; min-width: 0; }
+  .btn-add { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border: none; border-radius: 10px; padding: 10px 16px; color: #fff; font-size: 14px; cursor: pointer; font-weight: 600; white-space: nowrap; transition: all 0.2s; }
+  .btn-add:hover { box-shadow: 0 4px 12px rgba(255,107,107,0.4); }
+  .tag-select { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag-btn { border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #888; border-radius: 20px; padding: 3px 10px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .tag-btn.active { background: rgba(255,107,107,0.18); border-color: #ff6b6b; color: #ff6b6b; }
+  .reminder-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .reminder-row label { color: #888; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .reminder-row input[type="checkbox"] { accent-color: #ff6b6b; width: 16px; height: 16px; cursor: pointer; }
+
+  /* Filters */
+  .filters { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 4px 11px; color: #777; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .filter-btn.active { background: rgba(255,107,107,0.18); border-color: #ff6b6b; color: #ff6b6b; }
+
+  /* Date groups */
+  .date-group { margin-bottom: 16px; }
+  .date-header { display: flex; align-items: center; gap: 8px; padding: 4px 0; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .date-header .date-text { font-weight: 600; color: #999; font-size: 12px; }
+  .date-header .count { font-size: 10px; color: #555; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 10px; }
+  .overdue .date-header .date-text { color: #ff4d4f; }
+  .overdue .date-header { border-bottom-color: rgba(255,77,79,0.2); }
+
+  /* Items */
+  .item { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 10px 12px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; }
+  .item:hover { background: rgba(255,255,255,0.07); }
+  .item.done { opacity: 0.4; }
+  .item.done .item-text { text-decoration: line-through; color: #666; }
+  .item.overdue:not(.done) { border-color: rgba(255,77,79,0.3); background: rgba(255,77,79,0.05); animation: urgentPulse 3s infinite; }
+  .item.urgent:not(.done) { border-color: rgba(255,165,2,0.3); background: rgba(255,165,2,0.04); }
+  @keyframes urgentPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,77,79,0); } 50% { box-shadow: 0 0 8px 2px rgba(255,77,79,0.15); } }
+
+  .item-top { display: flex; align-items: flex-start; gap: 8px; }
+  .item-tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; white-space: nowrap; margin-bottom: 4px; display: inline-block; }
+  .tag-work { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+  .tag-life { background: rgba(255,165,2,0.15); color: #ffa502; }
+  .tag-money { background: rgba(82,196,26,0.15); color: #52c41a; }
+  .tag-health { background: rgba(24,144,255,0.15); color: #1890ff; }
+  .tag-other { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .item-text { flex: 1; font-size: 14px; color: #ddd; line-height: 1.5; word-break: break-word; }
+  .item-time { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+  .time-badge { font-size: 10px; padding: 2px 8px; border-radius: 8px; display: flex; align-items: center; gap: 3px; }
+  .time-deadline { background: rgba(255,77,79,0.12); color: #ff6b6b; }
+  .time-deadline.done { background: rgba(82,196,26,0.12); color: #52c41a; }
+  .time-deadline.overdue { background: rgba(255,77,79,0.2); color: #ff4d4f; font-weight: 600; }
+  .time-deadline.urgent { background: rgba(255,165,2,0.15); color: #ffa502; }
+  .time-plan { background: rgba(167,139,250,0.12); color: #a78bfa; }
+  .time-plan.done { background: rgba(82,196,26,0.12); color: #52c41a; }
+
+  .item-actions { display: flex; gap: 4px; flex-shrink: 0; padding-top: 2px; }
+  .action-btn { background: none; border: none; color: #444; font-size: 14px; cursor: pointer; padding: 2px 5px; border-radius: 5px; transition: all 0.2s; }
+  .action-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .done-btn:hover { color: #52c41a; }
+  .del-btn:hover { color: #ff4d4f; }
+  .edit-btn:hover { color: #ffa502; }
+
+  /* Plan modal */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: flex-end; padding: 0; }
+  .modal.show { display: flex; }
+  .modal-content { background: #1e1e3f; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; max-width: 680px; width: 100%; border: 1px solid rgba(255,255,255,0.1); max-height: 92vh; overflow-y: auto; }
+  .modal-content h3 { color: #fff; margin-bottom: 16px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .modal-row { margin-bottom: 12px; }
+  .modal-row label { display: block; color: #888; font-size: 12px; margin-bottom: 6px; }
+  .modal-row input, .modal-row textarea { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; font-size: 14px; padding: 10px 12px; outline: none; font-family: inherit; }
+  .modal-row textarea { resize: none; height: 80px; }
+  .modal-row input:focus, .modal-row textarea:focus { border-color: #ff6b6b; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #fff; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .modal-btn.primary { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border: none; }
+  .modal-btn:hover { background: rgba(255,255,255,0.1); }
+  .modal-btn.primary:hover { box-shadow: 0 4px 12px rgba(255,107,107,0.4); }
+  .modal-btn.cancel { color: #999; }
+
+  /* Import modal */
+  .modal textarea { width: 100%; height: 120px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #aaa; font-size: 12px; padding: 10px; resize: none; font-family: monospace; margin: 8px 0; }
+
+  /* Supervision section */
+  .super-section { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 14px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  .super-section h3 { color: #fff; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .super-item { background: rgba(255,77,79,0.06); border: 1px solid rgba(255,77,79,0.15); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .super-item.done { background: rgba(82,196,26,0.06); border-color: rgba(82,196,26,0.15); opacity: 0.6; }
+  .super-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .super-title { flex: 1; font-size: 13px; color: #ddd; font-weight: 600; line-height: 1.4; }
+  .super-item.done .super-title { text-decoration: line-through; color: #666; }
+  .super-meta { font-size: 10px; color: #ff4d4f; margin-top: 3px; }
+  .super-item.done .super-meta { color: #52c41a; }
+  .super-progress { height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .super-progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b6b, #ffa502); border-radius: 4px; transition: width 0.3s; }
+  .super-progress-fill.done { background: linear-gradient(90deg, #52c41a, #73d13d); }
+  .super-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .super-action { font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #888; transition: all 0.2s; }
+  .super-action:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .super-action.active { background: rgba(82,196,26,0.15); border-color: rgba(82,196,26,0.4); color: #52c41a; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.12); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 10px 24px; color: #fff; font-size: 13px; z-index: 99999; pointer-events: none; opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  /* Notification banner */
+  .notif-banner { background: linear-gradient(135deg, #ff4d4f, #ff6b6b); border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; text-align: center; font-size: 13px; color: #fff; cursor: pointer; display: none; }
+  .notif-banner.show { display: block; }
+  .notif-banner:hover { opacity: 0.9; }
+
+  .empty { text-align: center; padding: 40px 0; }
+  .empty .emoji { font-size: 52px; margin-bottom: 10px; }
+  .empty p { color: #666; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="emoji">🐔</div>
+    <h1>老六备忘录</h1>
+    <p>有事记一记，老六帮你记着</p>
+  </div>
+
+  <div id="notifBanner" class="notif-banner" onclick="requestNotif()">
+    🔔 点击开启提醒功能，到时间会通知你！
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statTotal">0</div><div class="label">全部</div></div>
+    <div class="stat"><div class="num" id="statDone">0</div><div class="label">已完成</div></div>
+    <div class="stat" id="statPendingWrap"><div class="num" id="statPending">0</div><div class="label">待完成</div></div>
+    <div class="stat danger" id="statOverdueWrap" style="display:none;"><div class="num" id="statOverdue">0</div><div class="label">已逾期</div></div>
+  </div>
+
+  <div class="sync-bar">
+    <button class="sync-btn important" onclick="showPlanModal()">
+      <span>📋</span>制定计划
+    </button>
+    <label class="sync-btn" for="importFile">
+      <span>📥</span>导入
+    </label>
+    <button class="sync-btn" onclick="exportData()">
+      <span>📤</span>导出
+    </button>
+    <button class="sync-btn danger" onclick="showClearModal()">
+      <span>🗑️</span>清空
+    </button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setTab('notes')">📝 记事</div>
+    <div class="tab" onclick="setTab('plans')">📋 计划</div>
+  </div>
+
+  <!-- 记事区域 -->
+  <div id="notesTab">
+    <div class="input-box">
+      <div class="input-row">
+        <input type="text" id="inputText" placeholder="写点什么..." maxlength="200">
+        <button class="btn-add" onclick="addNote()">添加</button>
+      </div>
+      <div class="input-row">
+        <input type="datetime-local" id="inputDeadline" title="截止时间">
+        <div class="tag-select" style="flex:1;">
+          <button class="tag-btn active" data-tag="work" onclick="selectTag(this)">💼 工作</button>
+          <button class="tag-btn" data-tag="life" onclick="selectTag(this)">🏠 生活</button>
+          <button class="tag-btn" data-tag="money" onclick="selectTag(this)">💰 金钱</button>
+          <button class="tag-btn" data-tag="health" onclick="selectTag(this)">🏃 健康</button>
+          <button class="tag-btn" data-tag="other" onclick="selectTag(this)">📌 其他</button>
+        </div>
+      </div>
+      <div class="reminder-row">
+        <label><input type="checkbox" id="remindMe" checked><span>🔔</span> 截止前提醒</label>
+        <label style="margin-left:8px;"><input type="checkbox" id="urgentOpt">🔥 紧急（提前1小时提醒）</label>
+      </div>
+    </div>
+
+    <div class="filters" id="noteFilters">
+      <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+      <button class="filter-btn" onclick="setFilter('today')">今日</button>
+      <button class="filter-btn" onclick="setFilter('week')">本周</button>
+      <button class="filter-btn" onclick="setFilter('overdue')">逾期</button>
+      <button class="filter-btn" onclick="setFilter('done')">已完成</button>
+      <button class="filter-btn" onclick="setFilter('undone')">待完成</button>
+    </div>
+
+    <div id="notesList"></div>
+  </div>
+
+  <!-- 计划督导区域 -->
+  <div id="plansTab" style="display:none;">
+    <div id="plansList"></div>
+  </div>
+</div>
+
+<!-- 添加计划弹窗 -->
+<div class="modal" id="planModal">
+  <div class="modal-content">
+    <h3>📋 制定计划</h3>
+    <div class="modal-row">
+      <label>计划名称</label>
+      <input type="text" id="planName" placeholder="比如：完成项目报告">
+    </div>
+    <div class="modal-row">
+      <label>截止日期</label>
+      <input type="datetime-local" id="planDeadline">
+    </div>
+    <div class="modal-row">
+      <label>拆解步骤（每行一个步骤）</label>
+      <textarea id="planSteps" placeholder="第一步：收集资料&#10;第二步：写初稿&#10;第三步：修改完善"></textarea>
+    </div>
+    <div class="modal-row">
+      <label>描述（可选）</label>
+      <input type="text" id="planDesc" placeholder="补充说明...">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closePlanModal()">取消</button>
+      <button class="modal-btn primary" onclick="savePlan()">创建计划</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入确认弹窗 -->
+<div class="modal" id="importModal">
+  <div class="modal-content">
+    <h3>📥 确认导入数据？</h3>
+    <p style="color:#aaa;font-size:13px;margin-bottom:8px;">导入将覆盖现有数据，请先导出备份！</p>
+    <textarea id="importPreview" readonly></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeImportModal()">取消</button>
+      <button class="modal-btn primary" onclick="confirmImport()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 清空确认弹窗 -->
+<div class="modal" id="clearModal">
+  <div class="modal-content">
+    <h3>🗑️ 确认清空全部数据？</h3>
+    <p style="color:#aaa;font-size:13px;margin-bottom:8px;">此操作不可恢复！请先导出备份。</p>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeClearModal()">取消</button>
+      <button class="modal-btn primary" onclick="confirmClear()">确认清空</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== 数据结构 ==========
+let notes = JSON.parse(localStorage.getItem('laoliu_notes_v3') || '[]');
+let plans = JSON.parse(localStorage.getItem('laoliu_plans_v1') || '[]');
+let currentFilter = 'all';
+let currentTag = 'work';
+let currentTab = 'notes';
+let pendingImport = null;
+let reminderTimers = [];
+
+// ========== 工具函数 ==========
+function save() {
+  localStorage.setItem('laoliu_notes_v3', JSON.stringify(notes));
+  localStorage.setItem('laoliu_plans_v1', JSON.stringify(plans));
+  renderAll();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function getToday() { return new Date().toISOString().split('T')[0]; }
+function getNow() { return new Date(); }
+function getWeekLater() { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0]; }
+function fmtDate(d) {
+  if (!d) return '';
+  const now = getNow();
+  const dt = new Date(new Date(d).getFullYear(), new Date(d).getMonth(), new Date(d).getDate());
+  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((dt - t) / 86400000);
+  if (diff === 0) return '今天';
+  if (diff === 1) return '明天';
+  if (diff === -1) return '昨天';
+  if (diff > 0 && diff <= 7) return diff + '天后';
+  if (diff < 0) return Math.abs(diff) + '天前';
+  return d.substring(5, 10);
+}
+function fmtTime(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
+}
+function isOverdue(d) { return d && new Date(d) < getNow(); }
+function isUrgent(d) {
+  if (!d) return false;
+  const diff = new Date(d) - getNow();
+  return diff > 0 && diff <= 3600000; // 1小时内
+}
+const tagLabels = { work:'💼 工作', life:'🏠 生活', money:'💰 金钱', health:'🏃 健康', other:'📌 其他' };
+const tagCss = { work:'tag-work', life:'tag-life', money:'tag-money', health:'tag-health', other:'tag-other' };
+
+// ========== Tab切换 ==========
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === (tab === 'notes' ? 0 : 1)));
+  document.getElementById('notesTab').style.display = tab === 'notes' ? 'block' : 'none';
+  document.getElementById('plansTab').style.display = tab === 'plans' ? 'block' : 'none';
+}
+
+// ========== 添加记事 ==========
+function addNote() {
+  const text = document.getElementById('inputText').value.trim();
+  const deadline = document.getElementById('inputDeadline').value;
+  const remind = document.getElementById('remindMe').checked;
+  const urgent = document.getElementById('urgentOpt').checked;
+  if (!text) { toast('⚠️ 请输入内容'); return; }
+  notes.unshift({
+    id: Date.now(), text, tag: currentTag, done: false, created: new Date().toISOString(),
+    deadline: deadline || '', remind, urgent, notified: false, urgentNotified: false
+  });
+  document.getElementById('inputText').value = '';
+  document.getElementById('inputDeadline').value = '';
+  save();
+  toast('✅ 已添加');
+  scheduleReminder(notes[0]);
+}
+
+// ========== 记事筛选 ==========
+function setFilter(f) {
+  currentFilter = f;
+  const maps = ['all','today','week','overdue','done','undone'];
+  document.querySelectorAll('.filter-btn').forEach((b, i) => b.classList.toggle('active', maps[i] === f));
+  renderNotes();
+}
+
+// ========== 渲染记事 ==========
+function renderNotes() {
+  const today = getToday();
+  const weekLater = getWeekLater();
+  let filtered = notes.filter(item => {
+    if (currentFilter === 'done') return item.done;
+    if (currentFilter === 'undone') return !item.done;
+    if (currentFilter === 'today') return item.deadline && item.deadline.startsWith(today);
+    if (currentFilter === 'week') return item.deadline && item.deadline >= today + 'T00:00' && item.deadline <= weekLater + 'T23:59';
+    if (currentFilter === 'overdue') return item.deadline && item.deadline && new Date(item.deadline) < getNow() && !item.done;
+    return true;
+  });
+
+  // Stats
+  document.getElementById('statTotal').textContent = notes.length;
+  document.getElementById('statDone').textContent = notes.filter(i => i.done).length;
+  document.getElementById('statPending').textContent = notes.filter(i => !i.done).length;
+  const overdueCount = notes.filter(i => i.deadline && !i.done && new Date(i.deadline) < getNow()).length;
+  const overdueWrap = document.getElementById('statOverdueWrap');
+  if (overdueCount > 0) { overdueWrap.style.display = 'block'; document.getElementById('statOverdue').textContent = overdueCount; }
+  else { overdueWrap.style.display = 'none'; }
+
+  if (filtered.length === 0) {
+    document.getElementById('notesList').innerHTML = '<div class="empty"><div class="emoji">📝</div><p>暂无事项</p></div>';
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(item => {
+    const key = item.deadline ? item.deadline.split('T')[0] : '无日期';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  });
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    if (a === '无日期') return 1;
+    if (b === '无日期') return -1;
+    return a.localeCompare(b);
+  });
+
+  let html = '';
+  sortedKeys.forEach(key => {
+    const overdue = key < today && key !== '无日期';
+    html += `<div class="date-group ${overdue ? 'overdue' : ''}">
+      <div class="date-header"><span class="date-text">${key === '无日期' ? '📌 无日期' : fmtDate(key)}</span><span class="count">${groups[key].length}项</span></div>`;
+    groups[key].forEach(item => {
+      const itemOverdue = item.deadline && !item.done && new Date(item.deadline) < getNow();
+      const itemUrgent = !itemOverdue && item.deadline && isUrgent(item.deadline);
+      html += `<div class="item ${item.done?'done':''} ${itemOverdue?'overdue':''} ${itemUrgent?'urgent':''}">
+        <button class="action-btn done-btn" onclick="toggleNote(${item.id})">${item.done?'↩️':'✅'}</button>
+        <div style="flex:1;min-width:0;">
+          <span class="item-tag ${tagCss[item.tag]}">${tagLabels[item.tag]}</span>
+          <div class="item-text">${item.text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+          ${item.deadline ? `<div class="item-time">
+            <span class="time-badge time-deadline ${item.done?'done':itemOverdue?'overdue':itemUrgent?'urgent':''}">
+              ${itemOverdue ? '⚠️ ' : itemUrgent ? '🔥 ' : '⏰ '}${fmtDate(item.deadline)} ${fmtTime(item.deadline)}
+            </span>
+            ${item.urgent ? '<span class="time-badge" style="background:rgba(255,165,2,0.12);color:#ffa502;">🔥 紧急</span>' : ''}
+          </div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="action-btn edit-btn" onclick="deleteNote(${item.id})">🗑️</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('notesList').innerHTML = html;
+}
+
+// ========== 计划 ==========
+function showPlanModal() {
+  document.getElementById('planModal').classList.add('show');
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('planDeadline').value = tomorrow.toISOString().slice(0,16);
+}
+function closePlanModal() {
+  document.getElementById('planModal').classList.remove('show');
+  document.getElementById('planName').value = '';
+  document.getElementById('planSteps').value = '';
+  document.getElementById('planDesc').value = '';
+}
+
+function savePlan() {
+  const name = document.getElementById('planName').value.trim();
+  const deadline = document.getElementById('planDeadline').value;
+  const stepsRaw = document.getElementById('planSteps').value.trim();
+  const desc = document.getElementById('planDesc').value.trim();
+  if (!name) { toast('⚠️ 请输入计划名称'); return; }
+  if (!stepsRaw) { toast('⚠️ 请至少输入一个步骤'); return; }
+  const steps = stepsRaw.split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ text: s, done: false }));
+  const progress = Math.round((steps.filter(s => s.done).length / steps.length) * 100);
+  plans.unshift({ id: Date.now(), name, deadline: deadline || '', desc, steps, progress, created: new Date().toISOString() });
+  closePlanModal();
+  save();
+  toast('✅ 计划已创建');
+}
+
+function toggleStep(planId, stepIndex) {
+  const plan = plans.find(p => p.id === planId);
+  if (!plan) return;
+  plan.steps[stepIndex].done = !plan.steps[stepIndex].done;
+  plan.progress = Math.round((plan.steps.filter(s => s.done).length / plan.steps.length) * 100);
+  if (plan.progress === 100) {
+    sendNotification('🎉 计划完成！', plan.name + ' 已全部完成！');
+    toast('🎉 ' + plan.name + ' 完成！');
+  }
+  save();
+}
+
+function deletePlan(id) {
+  plans = plans.filter(p => p.id !== id);
+  save();
+}
+
+function renderPlans() {
+  if (plans.length === 0) {
+    document.getElementById('plansList').innerHTML = '<div class="empty"><div class="emoji">📋</div><p>暂无计划<br><span style="font-size:13px;color:#555;margin-top:6px;">点击上方「制定计划」开始</span></p></div>';
+    return;
+  }
+  const today = getToday();
+  let html = '';
+  plans.forEach(plan => {
+    const overdue = plan.deadline && new Date(plan.deadline) < getNow() && plan.progress < 100;
+    const daysLeft = plan.deadline ? Math.ceil((new Date(plan.deadline) - getNow()) / 86400000) : null;
+    html += `<div class="super-item ${plan.progress === 100 ? 'done' : ''}" style="${overdue ? 'border-color:rgba(255,77,79,0.3);background:rgba(255,77,79,0.06);' : ''}">
+      <div class="super-header">
+        <div class="super-title">${plan.name}</div>
+        <div class="item-actions">
+          <button class="action-btn del-btn" onclick="deletePlan(${plan.id})">🗑️</button>
+        </div>
+      </div>
+      <div class="super-meta">
+        ${plan.progress === 100 ? '✅ 已全部完成' :
+          overdue ? `⚠️ 已逾期 ${Math.abs(daysLeft)}天` :
+          daysLeft !== null ? `⏰ 剩余 ${daysLeft} 天` : ''}
+        ${plan.desc ? ' · ' + plan.desc : ''}
+      </div>
+      <div class="super-progress">
+        <div class="super-progress-fill ${plan.progress===100?'done':''}" style="width:${plan.progress}%"></div>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">${plan.progress}%</div>
+      <div class="super-actions">
+        ${plan.steps.map((s, i) => `<button class="super-action ${s.done?'active':''}" onclick="toggleStep(${plan.id},${i})">${s.done?'✅ ':'○ '}${s.text}</button>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('plansList').innerHTML = html;
+}
+
+function renderAll() {
+  renderNotes();
+  renderPlans();
+}
+
+// ========== 提醒功能 ==========
+function requestNotif() {
+  if (!('Notification' in window)) { toast('❌ 浏览器不支持提醒'); return; }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      document.getElementById('notifBanner').classList.remove('show');
+      toast('🔔 提醒已开启！');
+    } else { toast('⚠️ 请允许通知权限'); }
+  });
+}
+
+// 首次检查通知权限
+if ('Notification' in window && Notification.permission === 'default') {
+  document.getElementById('notifBanner').classList.add('show');
+}
+
+function sendNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '🐔', badge: '🐔', requireInteraction: true });
+  }
+}
+
+function scheduleReminder(note) {
+  if (!note.deadline || !note.remind || note.done) return;
+  // 普通提醒：截止前15分钟
+  const deadline = new Date(note.deadline);
+  const reminderTime = new Date(deadline - 15 * 60000);
+  if (reminderTime > getNow()) {
+    const delay = reminderTime - getNow();
+    const timer = setTimeout(() => {
+      if (!note.done) {
+        sendNotification('⏰ 事项即将到期', note.text + '\n截止时间：' + fmtDate(note.deadline) + ' ' + fmtTime(note.deadline));
+        toast('⏰ 「' + note.text.substring(0,15) + '...」即将到期！');
+      }
+    }, delay);
+    reminderTimers.push(timer);
+  }
+  // 紧急提醒：截止前1小时
+  if (note.urgent) {
+    const urgentTime = new Date(deadline - 60 * 60000);
+    if (urgentTime > getNow()) {
+      const delay2 = urgentTime - getNow();
+      const t2 = setTimeout(() => {
+        if (!note.done) {
+          sendNotification('🔥 紧急！事项1小时后到期', note.text);
+        }
+      }, delay2);
+      reminderTimers.push(t2);
+    }
+  }
+  // 逾期提醒
+  if (deadline < getNow()) {
+    const delay3 = Math.min(60000, 5000);
+    const t3 = setTimeout(() => {
+      if (!note.done) {
+        sendNotification('⚠️ 事项已逾期！', note.text);
+        toast('⚠️ 「' + note.text.substring(0,15) + '...」已逾期！');
+      }
+    }, delay3);
+    reminderTimers.push(t3);
+  }
+}
+
+function toggleNote(id) {
+  const note = notes.find(n => n.id === id);
+  if (note) {
+    note.done = !note.done;
+    if (note.done) toast('✅ 已完成');
+    save();
+  }
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  save();
+}
+
+// ========== 导入导出 ==========
+function exportData() {
+  const data = JSON.stringify({ version: 3, exported: new Date().toISOString(), notes, plans }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = '老六备忘录_' + getToday() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('📤 已导出');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      const importedNotes = data.notes || [];
+      const importedPlans = data.plans || [];
+      const total = importedNotes.length + importedPlans.length;
+      document.getElementById('importPreview').value = `将导入 ${total} 条数据\n记事：${importedNotes.length} 条\n计划：${importedPlans.length} 条\n\n记事预览（前3条）：\n` +
+        importedNotes.slice(0, 3).map(i => '• ' + i.text.substring(0, 35)).join('\n');
+      pendingImport = { notes: importedNotes, plans: importedPlans };
+      document.getElementById('importModal').classList.add('show');
+    } catch (err) { toast('❌ 文件格式错误'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function confirmImport() {
+  if (!pendingImport) return;
+  notes = pendingImport.notes;
+  plans = pendingImport.plans;
+  pendingImport = null;
+  save();
+  closeImportModal();
+  toast('✅ 导入成功！');
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('show');
+  pendingImport = null;
+}
+
+function showClearModal() {
+  if (notes.length === 0 && plans.length === 0) { toast('📭 已经是空的'); return; }
+  document.getElementById('clearModal').classList.add('show');
+}
+function closeClearModal() { document.getElementById('clearModal').classList.remove('show'); }
+function confirmClear() {
+  notes = []; plans = [];
+  save();
+  closeClearModal();
+  toast('🗑️ 已清空');
+}
+
+function selectTag(btn) {
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTag = btn.dataset.tag;
+}
+
+// ========== 启动 ==========
+function init() {
+  // 加载已有提醒
+  notes.forEach(note => { if (!note.done && note.deadline) scheduleReminder(note); });
+  // 每分钟检查一次
+  setInterval(() => {
+    notes.forEach(note => {
+      if (!note.done && note.deadline && note.remind) {
+        const deadline = new Date(note.deadline);
+        if (!note.notified && deadline - getNow() <= 15 * 60000 && deadline - getNow() > 0) {
+          note.notified = true;
+          sendNotification('⏰ 事项即将到期', note.text);
+          save();
+        }
+        if (!note.urgentNotified && note.urgent && deadline - getNow() <= 60 * 60000 && deadline - getNow() > 0) {
+          note.urgentNotified = true;
+          sendNotification('🔥 紧急！1小时后截止', note.text);
+          save();
+        }
+      }
+    });
+    renderAll();
+  }, 60000);
+
+  renderAll();
+}
+
+document.getElementById('inputDate')?.remove;
+document.getElementById('inputDate');
+init();
+</script>
+</body>
+</html>
